@@ -87,6 +87,13 @@ public class Receiver implements AsioDriverListener {
     }
 
     public void decode() {
-        
+        Queue<Float> syncFIFO = new ArrayDeque<>();
+        // initialize syncFIFO
+        for(int i = 0; i < Util.SoundUtil.headerLength; i++){
+            syncFIFO.add(allInputs[i]);
+        }
+         for(int i = Util.SoundUtil.; i < allInputs.length; i++){
+
+         }
     }
 }
