@@ -66,7 +66,7 @@ public class Util {
     }
 
     public static class SoundUtil {
-        public static final int inputSize = 13;
+        public static final int inputSize = 141;
         public static final float sampleRate = 44100;
         public static final float bitRate = 1000;
         public static final float carrFreq = 2000;

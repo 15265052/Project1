@@ -8,6 +8,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+/**
+ * @author duxiaoyuan
+ */
 public class Transmitter implements AsioDriverListener {
     private static final AsioDriver asioDriver = AsioDriver.getDriver(AsioDriver.getDriverNames().get(0));
     private final List<Integer> input = Util.FileUtil.readInput("INPUT.txt");
