@@ -8,6 +8,6 @@ public class Starter {
 //        Transmitter transmitter = new Transmitter();
 //        transmitter.startTransmit();
         Receiver receiver = new Receiver();
-        receiver.startTransmit();
+        receiver.startReceive();
     }
 }

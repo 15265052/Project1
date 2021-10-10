@@ -2,9 +2,7 @@ package Part3;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 public class Util {
     public static class FileUtil {
@@ -45,9 +43,22 @@ public class Util {
     }
 
     public static class MathUtil {
-        public static float correlation(float[] x, float[] y) {
+        public static float correlation(Collection<Float> x, float[] y) {
             float ret = 0;
-            for (int i = 0; i < y.length; i++) {
+            int i = 0;
+            for(Float e : x) {
+                ret += e * y[i];
+                i++;
+                if(i >= y.length) {
+                    break;
+                }
+            }
+            return ret;
+        }
+
+        public static float correlation(float[] x, float[] y){
+            float ret = 0;
+            for(int i = 0; i < y.length; i++){
                 ret += x[i] * y[i];
             }
             return ret;
@@ -59,21 +70,23 @@ public class Util {
         public static final float sampleRate = 44100;
         public static final float bitRate = 1000;
         public static final float carrFreq = 2000;
-        public static final int bitLength = (int) (sampleRate / bitRate);
+        public static final int symbolLength = (int) (sampleRate / bitRate);
         public static final int threshold = 30;
-        public static float[] one = new float[bitLength];
-        public static float[] zero = new float[bitLength];
+        public static float[] one = new float[symbolLength];
+        public static float[] zero = new float[symbolLength];
         public final static int headerLength = 256;
         private final static float[] header = generateHeader();
-        public static final int bitsPerFrame = 100;
-        public static final int frameLength = bitLength * bitsPerFrame + headerLength;// each frame contains 100 bits and a header
+        public static final int symbolsPerFrame = 100;
+        public static final int frameLength = symbolLength * symbolsPerFrame + headerLength;// each frame contains 100 bits and a header
+
+        public static final int dataLength = frameLength - headerLength;
         static {
             for (int i = 0; i < one.length; i++) {
                 one[i] = (float) Math.sin(2 * Math.PI * i * carrFreq / sampleRate);
                 zero[i] = -(float) Math.sin(2 * Math.PI * i * carrFreq / sampleRate);
             }
         }
-
+        public static final float bitThreshold = MathUtil.correlation(header, one);
         public static float[] getHeader() {
             return header;
         }
@@ -83,7 +96,7 @@ public class Util {
         }
 
         public static void addData(float[] output, float[] data, int outFrom, int inFrom) {
-            for (int i = inFrom; i < inFrom + bitsPerFrame * bitLength; i++) {
+            for (int i = inFrom; i < inFrom + symbolsPerFrame * symbolLength; i++) {
                 if (i < data.length) {
                     output[outFrom] = data[i];
                 } else {
@@ -124,8 +137,8 @@ public class Util {
         }
 
         public static float[] modulate(List<Integer> input) {
-            float[] modulatedInput = new float[input.size() * bitLength];
-            for (int i = 0, m = 0; i < input.size(); i++, m += bitLength) {
+            float[] modulatedInput = new float[input.size() * symbolLength];
+            for (int i = 0, m = 0; i < input.size(); i++, m += symbolLength) {
                 if (input.get(i) == 0) {
                     setArray(modulatedInput, zero, m);
                 } else if (input.get(i) == 1) {
@@ -147,5 +160,8 @@ public class Util {
             System.arraycopy(y, 0, x, from, y.length);
         }
 
+        public static void main(String[] args) {
+            System.out.println(MathUtil.correlation(one, zero));
+        }
     }
 }

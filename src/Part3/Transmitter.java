@@ -22,22 +22,23 @@ public class Transmitter implements AsioDriverListener {
     private float transmitTime;
     public Transmitter() {
         modulatedInput = Util.SoundUtil.modulate(input);
-        frameNum = modulatedInput.length / 100;
-        if (modulatedInput.length % 100 != 0) {
+        frameNum = modulatedInput.length / Util.SoundUtil.dataLength;
+        if (modulatedInput.length % Util.SoundUtil.dataLength != 0) {
             frameNum++;
         }
+        // a frame contains 100 symbols, while it needs 100 * symbolLength = 4400
         output = new float[frameNum * Util.SoundUtil.frameLength];
         int index = 0;
         int m = 0;
         for (int i = 0; i < frameNum; i++) {
             Util.SoundUtil.addHeader(output, i * Util.SoundUtil.frameLength);
-            index += Util.SoundUtil.headerLength - 1;
+            index += Util.SoundUtil.headerLength;
 
             Util.SoundUtil.addData(output, modulatedInput, index, m);
-            m += Util.SoundUtil.bitLength * Util.SoundUtil.bitsPerFrame;
-            index += Util.SoundUtil.bitLength * Util.SoundUtil.bitsPerFrame;
+            m += Util.SoundUtil.dataLength;
+            index += Util.SoundUtil.dataLength;
         }
-        transmitTime = (frameNum * Util.SoundUtil.bitsPerFrame * Util.SoundUtil.bitLength  * 1000 ) / (Util.SoundUtil.sampleRate);
+        transmitTime = (frameNum * Util.SoundUtil.symbolsPerFrame * Util.SoundUtil.symbolLength * 1000 ) / (Util.SoundUtil.sampleRate);
     }
 
     public void transmit() {
