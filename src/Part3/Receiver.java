@@ -80,6 +80,7 @@ public class Receiver implements AsioDriverListener {
                 e.printStackTrace();
             }
             asioDriver.shutdownAndUnloadDriver();
+            System.out.println(Arrays.toString(allInputs));
             decode();
             Util.FileUtil.writeOutput("OUTPUT.txt", outputList);
             System.out.println("Finished....");
@@ -90,6 +91,9 @@ public class Receiver implements AsioDriverListener {
     }
 
     public void decode() {
+        float max = 0;
+        float power = 0;
+        int count = 0;
         Queue<Float> syncFIFO = new ArrayDeque<>(Util.SoundUtil.headerLength);
         Queue<Float> frameBuffer = new ArrayDeque<>(Util.SoundUtil.frameLength);
 
@@ -100,7 +104,8 @@ public class Receiver implements AsioDriverListener {
             }
             frameBuffer.add(allInputs[i]);
         }
-        if(Util.MathUtil.correlation(syncFIFO, Util.SoundUtil.getHeader()) >= Util.SoundUtil.threshold){
+        max = Util.MathUtil.correlation(syncFIFO, Util.SoundUtil.getHeader());
+        if(Util.MathUtil.correlation(syncFIFO, Util.SoundUtil.getHeader()) > Util.SoundUtil.threshold / 5e8){
             // detect a frame
             decodeFrame(new ArrayDeque<>(frameBuffer));
         }
@@ -114,12 +119,19 @@ public class Receiver implements AsioDriverListener {
 
              frameBuffer.remove();
              frameBuffer.add(currentSample);
-
-            if(Util.MathUtil.correlation(syncFIFO, Util.SoundUtil.getHeader()) >= Util.SoundUtil.threshold){
+             if (Util.MathUtil.correlation(syncFIFO, Util.SoundUtil.getHeader()) > max) {
+                 max = Util.MathUtil.correlation(syncFIFO, Util.SoundUtil.getHeader());
+             }
+             if(Util.MathUtil.correlation(syncFIFO, Util.SoundUtil.getHeader()) > 0.5){
+                 count++;
+             }
+            if(Util.MathUtil.correlation(syncFIFO, Util.SoundUtil.getHeader()) >= Util.SoundUtil.threshold / 5e8){
                 // detect a frame
                 decodeFrame(new ArrayDeque<>(frameBuffer));
             }
          }
+         System.out.println(max);
+         System.out.println(count);
     }
 
     private void decodeFrame(Queue<Float> frame){
@@ -141,7 +153,7 @@ public class Receiver implements AsioDriverListener {
     }
 
     private int decodeOneSymbol(float[] symbol){
-        return Util.MathUtil.correlation(symbol, Util.SoundUtil.one) > Util.SoundUtil.bitThreshold ? 1 : 0;
+        return Util.MathUtil.correlation(symbol, Util.SoundUtil.one) > 0 ? 1 : 0;
     }
 
 

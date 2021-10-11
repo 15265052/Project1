@@ -116,7 +116,7 @@ public class Util {
 
             float phase = 0;
             float frequency = minFrequency;
-            float frequencyStep = (maxFrequency - minFrequency) / 32;
+            float frequencyStep = (maxFrequency - minFrequency) / 128;
             float timeGap = 1 / sampleRate;
 
             float[] header = new float[headerLength];
@@ -124,7 +124,7 @@ public class Util {
             for (int i = 0; i < headerLength; i++) {
                 header[i] = (float) Math.sin(phase) * scale;
 
-                if (i <= 32) {
+                if (i <= 128) {
                     frequency += frequencyStep;
                 } else {
                     frequency -= frequencyStep;
@@ -161,7 +161,7 @@ public class Util {
         }
 
         public static void main(String[] args) {
-            System.out.println(MathUtil.correlation(one, zero));
+            System.out.println(MathUtil.correlation(header, header));
         }
     }
 }
