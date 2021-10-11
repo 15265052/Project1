@@ -80,13 +80,13 @@ public class Receiver implements AsioDriverListener {
                 e.printStackTrace();
             }
             asioDriver.shutdownAndUnloadDriver();
+            decode();
+            Util.FileUtil.writeOutput("OUTPUT.txt", outputList);
             System.out.println("Finished....");
         });
 
         stopper.start();
         receive();
-        decode();
-        Util.FileUtil.writeOutput("OUTPUT.txt", outputList);
     }
 
     public void decode() {

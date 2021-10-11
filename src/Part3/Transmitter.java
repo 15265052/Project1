@@ -22,7 +22,7 @@ public class Transmitter implements AsioDriverListener {
     private int frameNum;
     private float[] output;
     private float[] asioOutput;
-    private float transmitTime;
+    public float transmitTime;
     public Transmitter() {
         modulatedInput = Util.SoundUtil.modulate(input);
         frameNum = modulatedInput.length / Util.SoundUtil.dataLength;
