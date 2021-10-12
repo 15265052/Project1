@@ -42,6 +42,7 @@ public class Transmitter implements AsioDriverListener {
             index += Util.SoundUtil.dataLength;
         }
         transmitTime = (frameNum * Util.SoundUtil.symbolsPerFrame * Util.SoundUtil.symbolLength * 1000 ) / (Util.SoundUtil.sampleRate);
+        System.out.println(asioDriver.getChannelOutput(0).getSampleType());
     }
 
     public void transmit() {
@@ -51,6 +52,10 @@ public class Transmitter implements AsioDriverListener {
         asioOutput = new float[bufferSize];
         asioDriver.createBuffers(asioChannels);
         asioDriver.start();
+    }
+
+    public float[] getOutput() {
+        return output;
     }
 
     @Override
