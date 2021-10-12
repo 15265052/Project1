@@ -7,5 +7,7 @@ for i in range(length_str):
     strout=fout.read(1)
     if strin==strout:
         count+=1
+    else:
+        print("error: INPUT : ",strin," OUTPUT: ", strout, "index: ", i)
 
 print(str(count/10000*100)+"%")

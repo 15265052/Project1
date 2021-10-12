@@ -25,7 +25,7 @@ public class Receiver {
     }
 
     public void receive() {
-        WaveFileReader waveFileReader = new WaveFileReader("src/Part1/p.wav");
+        WaveFileReader waveFileReader = new WaveFileReader("src/Part1/o.wav");
         int[][] data = waveFileReader.getData();
         allInputs = new float[data[0].length];
         for(int i = 0; i < data[0].length;i++){
@@ -51,31 +51,36 @@ public class Receiver {
             frameBuffer.add(allInputs[i]);
         }
         max = Util.MathUtil.correlation(syncFIFO, Util.SoundUtil.getHeader());
-        if (Util.MathUtil.correlation(syncFIFO, Util.SoundUtil.getHeader()) > Util.SoundUtil.threshold / 5e5) {
-            // detect a frame
-            decodeFrame(new ArrayDeque<>(frameBuffer));
-        }
+//        if (Util.MathUtil.correlation(syncFIFO, Util.SoundUtil.getHeader()) >= 1.726) {
+//            // detect a frame
+//            count++;
+//            decodeFrame(frameBuffer);
+//        }
 
         float currentSample;
-        for (int i = Util.SoundUtil.frameLength; i < allInputs.length; i++) {
-            currentSample = allInputs[i];
+        for (int i = Util.SoundUtil.frameLength-1; i < allInputs.length;) {
+            if (Util.MathUtil.correlation(syncFIFO, Util.SoundUtil.getHeader()) >= 0.5) {
+                // detect a frame
+                count++;
+                decodeFrame(frameBuffer);
+                fillInNewBuffer(frameBuffer, syncFIFO, i+1);
+                i += Util.SoundUtil.frameLength;
+                continue;
+            }
+            if(i + 1 >= allInputs.length){
+                break;
+            }
+            currentSample = allInputs[++i];
             int headerIndex = i - (Util.SoundUtil.frameLength - Util.SoundUtil.headerLength);
             syncFIFO.remove();
             syncFIFO.add(allInputs[headerIndex]);
 
             frameBuffer.remove();
             frameBuffer.add(currentSample);
-            if (Util.MathUtil.correlation(syncFIFO, Util.SoundUtil.getHeader()) > max) {
-                max = Util.MathUtil.correlation(syncFIFO, Util.SoundUtil.getHeader());
-            }
-            if (Util.MathUtil.correlation(syncFIFO, Util.SoundUtil.getHeader()) >= 6e-6) {
-                // detect a frame
-                count++;
-                decodeFrame(new ArrayDeque<>(frameBuffer));
-            }
         }
         System.out.println(max);
         System.out.println(count);
+        Util.FileUtil.writeOutput("OUTPUT.txt", outputList);
     }
 
     private void decodeFrame(Queue<Float> frame) {
@@ -93,6 +98,20 @@ public class Receiver {
                 bitBuffer[j] = frame.remove();
             }
             outputList.add(decodeOneSymbol(bitBuffer));
+        }
+    }
+
+    private void fillInNewBuffer(Queue<Float> frame, Queue<Float> syncFIFO, int index){
+        syncFIFO.clear();
+        for(int i = index; i < index + Util.SoundUtil.frameLength; i++){
+            if(i < allInputs.length) {
+                if(i < index + Util.SoundUtil.headerLength){
+                    syncFIFO.add(allInputs[i]);
+                }
+                frame.add(allInputs[i]);
+            }else{
+                break;
+            }
         }
     }
 
