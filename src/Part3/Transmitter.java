@@ -1,5 +1,7 @@
 package Part3;
 
+import Part1.Player;
+import Part3.waveaccess.WaveFileWriter;
 import com.synthbot.jasiohost.AsioChannel;
 import com.synthbot.jasiohost.AsioDriver;
 import com.synthbot.jasiohost.AsioDriverListener;
@@ -11,17 +13,11 @@ import java.util.Set;
 /**
  * @author duxiaoyuan
  */
-public class Transmitter implements AsioDriverListener {
-    private static final AsioDriver asioDriver = AsioDriver.getDriver(AsioDriver.getDriverNames().get(0));
+public class Transmitter {
     private final List<Integer> input = Util.FileUtil.readInput("INPUT.txt");
-    private final AsioDriverListener host = this;
-    private Set<AsioChannel> asioChannels = new HashSet<>();
-    private int bufferSize;
-    private int inputSampleIndex = 0;
     private float[] modulatedInput;
     private int frameNum;
     private float[] output;
-    private float[] asioOutput;
     public float transmitTime;
     public Transmitter() {
         modulatedInput = Util.SoundUtil.modulate(input);
@@ -45,62 +41,22 @@ public class Transmitter implements AsioDriverListener {
     }
 
     public void transmit() {
-        asioChannels.add(asioDriver.getChannelOutput(0));
-        asioDriver.addAsioDriverListener(host);
-        bufferSize = asioDriver.getBufferPreferredSize();
-        asioOutput = new float[bufferSize];
-        asioDriver.createBuffers(asioChannels);
-        asioDriver.start();
-    }
-
-    @Override
-    public void sampleRateDidChange(double sampleRate) {
-
-    }
-
-    @Override
-    public void resetRequest() {
-
-    }
-
-    @Override
-    public void resyncRequest() {
-
-    }
-
-    @Override
-    public void bufferSizeChanged(int bufferSize) {
-
-    }
-
-    @Override
-    public void latenciesChanged(int inputLatency, int outputLatency) {
-
-    }
-
-    @Override
-    public void bufferSwitch(long sampleTime, long samplePosition, Set<AsioChannel> activeChannels) {
-        for (int i = 0; i < bufferSize; i++, inputSampleIndex++) {
-            asioOutput[i] = output[inputSampleIndex];
+        int[][] data = new int[1][output.length];
+        for(int i = 0; i < output.length; i++) {
+            data[0][i] = (int) (output[i] * 10000);
         }
-
-        for (AsioChannel asioChannel : activeChannels) {
-            asioChannel.write(asioOutput);
-        }
+        WaveFileWriter waveFileWriter = new WaveFileWriter("src/Part1/p.wav", data, (long) Util.SoundUtil.sampleRate);
+//        Player player = new Player((long) transmitTime, "p.wav");
+//        player.playSound();
     }
 
-    public void startTransmit() {
-        Thread stopper = new Thread(() -> {
-            try {
-                Thread.sleep((long) transmitTime);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            asioDriver.shutdownAndUnloadDriver();
-            System.out.println("Finished....");
-        });
-        stopper.start();
-        transmit();
+    public float[] getOutput() {
+        return output;
+    }
+
+    public static void main(String[] args) {
+        Transmitter transmitter = new Transmitter();
+        transmitter.transmit();
     }
 
 }

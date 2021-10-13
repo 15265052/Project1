@@ -4,6 +4,9 @@ import javax.sound.sampled.*;
 import java.io.File;
 import java.io.IOException;
 
+/**
+ * @author duxiaoyuan
+ */
 public class Recorder {
     public static final AudioFileFormat.Type fileType = AudioFileFormat.Type.WAVE;
     public static final AudioFormat audioFormat = new AudioFormat(44100, 16, 1, true, false);
