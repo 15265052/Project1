@@ -1,8 +1,13 @@
 package Part3;
 
 import Part3.waveaccess.WaveFileReader;
-import com.synthbot.jasiohost.AsioChannel;
+import org.quifft.QuiFFT;
+import org.quifft.output.FFTFrame;
+import org.quifft.output.FFTResult;
 
+import javax.sound.sampled.UnsupportedAudioFileException;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.*;
 
 /**
@@ -25,15 +30,41 @@ public class Receiver {
     }
 
     public void receive() {
-        WaveFileReader waveFileReader = new WaveFileReader("src/Part1/o.wav");
-        int[][] data = waveFileReader.getData();
-        allInputs = new float[data[0].length];
-        for(int i = 0; i < data[0].length;i++){
-            allInputs[i] = (float) data[0][i] / 10000;
+        try {
+            FFTResult fftResult = new QuiFFT("src/main/java/Part1/o.wav").normalized(true).fullFFT();
+            FileWriter fileWriter = new FileWriter("src/main/java/Part3/waves.txt");
+            double maxFrequency = -9999999;
+            for (FFTFrame f : fftResult.fftFrames) {
+                for (int i = 0; i < f.bins.length; i++) {
+                    if (f.bins[i].frequency > maxFrequency) {
+                        maxFrequency = f.bins[i].frequency;
+                    }
+                }
+                break;
+            }
+            double[] fft = new double[(int) maxFrequency+1];
+            for (FFTFrame f : fftResult.fftFrames) {
+                for (int i = 0; i < f.bins.length; i++) {
+                    fft[(int) f.bins[i].frequency] -= f.bins[i].amplitude;
+                }
+                break;
+            }
+            for (double d : fft) {
+                fileWriter.write(String.valueOf(d));
+                fileWriter.write(",");
+            }
+
+        } catch (IOException | UnsupportedAudioFileException e) {
+            e.printStackTrace();
         }
+
+//        int[][] data = waveFileReader.getData();
+//        allInputs = new float[data[0].length];
+//        for(int i = 0; i < data[0].length;i++){
+//            allInputs[i] = (float) data[0][i] / 10000;
+    }
 //        Transmitter transmitter = new Transmitter();
 //        allInputs = transmitter.getOutput();
-    }
 
 
     public void decode() {
@@ -58,16 +89,16 @@ public class Receiver {
 //        }
 
         float currentSample;
-        for (int i = Util.SoundUtil.frameLength-1; i < allInputs.length;) {
+        for (int i = Util.SoundUtil.frameLength - 1; i < allInputs.length; ) {
             if (Util.MathUtil.correlation(syncFIFO, Util.SoundUtil.getHeader()) >= 0.5) {
                 // detect a frame
                 count++;
                 decodeFrame(frameBuffer);
-                fillInNewBuffer(frameBuffer, syncFIFO, i+1);
+                fillInNewBuffer(frameBuffer, syncFIFO, i + 1);
                 i += Util.SoundUtil.frameLength;
                 continue;
             }
-            if(i + 1 >= allInputs.length){
+            if (i + 1 >= allInputs.length) {
                 break;
             }
             currentSample = allInputs[++i];
@@ -101,15 +132,15 @@ public class Receiver {
         }
     }
 
-    private void fillInNewBuffer(Queue<Float> frame, Queue<Float> syncFIFO, int index){
+    private void fillInNewBuffer(Queue<Float> frame, Queue<Float> syncFIFO, int index) {
         syncFIFO.clear();
-        for(int i = index; i < index + Util.SoundUtil.frameLength; i++){
-            if(i < allInputs.length) {
-                if(i < index + Util.SoundUtil.headerLength){
+        for (int i = index; i < index + Util.SoundUtil.frameLength; i++) {
+            if (i < allInputs.length) {
+                if (i < index + Util.SoundUtil.headerLength) {
                     syncFIFO.add(allInputs[i]);
                 }
                 frame.add(allInputs[i]);
-            }else{
+            } else {
                 break;
             }
         }
@@ -119,5 +150,8 @@ public class Receiver {
         return Util.MathUtil.correlation(symbol, Util.SoundUtil.one) > 0 ? 1 : 0;
     }
 
-
+    public static void main(String[] args) {
+        Receiver receiver = new Receiver();
+        receiver.receive();
+    }
 }

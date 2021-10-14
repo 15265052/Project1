@@ -2,9 +2,6 @@ package Part3;
 
 import Part1.Player;
 import Part3.waveaccess.WaveFileWriter;
-import com.synthbot.jasiohost.AsioChannel;
-import com.synthbot.jasiohost.AsioDriver;
-import com.synthbot.jasiohost.AsioDriverListener;
 
 import java.util.HashSet;
 import java.util.List;
@@ -19,6 +16,7 @@ public class Transmitter {
     private int frameNum;
     private float[] output;
     public float transmitTime;
+
     public Transmitter() {
         modulatedInput = Util.SoundUtil.modulate(input);
         frameNum = modulatedInput.length / Util.SoundUtil.dataLength;
@@ -37,12 +35,12 @@ public class Transmitter {
             m += Util.SoundUtil.dataLength;
             index += Util.SoundUtil.dataLength;
         }
-        transmitTime = (frameNum * Util.SoundUtil.symbolsPerFrame * Util.SoundUtil.symbolLength * 1000 ) / (Util.SoundUtil.sampleRate);
+        transmitTime = (frameNum * Util.SoundUtil.symbolsPerFrame * Util.SoundUtil.symbolLength * 1000) / (Util.SoundUtil.sampleRate);
     }
 
     public void transmit() {
         int[][] data = new int[1][output.length];
-        for(int i = 0; i < output.length; i++) {
+        for (int i = 0; i < output.length; i++) {
             data[0][i] = (int) (output[i] * 10000);
         }
         WaveFileWriter waveFileWriter = new WaveFileWriter("src/Part1/p.wav", data, (long) Util.SoundUtil.sampleRate);
