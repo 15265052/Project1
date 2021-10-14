@@ -1,7 +1,10 @@
+import matplotlib.pyplot as plt
 import numpy as np
 import pyaudio
 from scipy import signal, integrate
 import time
+import sounddevice as sd
+from scipy.fft import fft
 
 
 def transmit(file_name):
@@ -41,14 +44,29 @@ def transmit(file_name):
 def gen_header():
     ''' header for 0.01 second'''
     header_length = 480
-    t = np.linspace(0, 1, 48000, endpoint=True, dtype=np.float32)
-    t = t[0:header_length]
-    f_var = np.concatenate([np.linspace(8000, 12000, 240), np.linspace(12000, 8000, 240)])
-    header = np.sin(2 * np.pi * integrate.cumtrapz(f_var, t))
+    sample_rate = 48000
+    F0 = 1875
+    dF = 46.875
+    header_index = [0, 3, 4, 7, 8, 11, 12, 15, 16, 19, 20, 23, 24, 27, 28, 31]
+    header = np.zeros(48000, dtype=np.float32)
+    for i in header_index:
+        if i % 2 == 0:
+            header += np.sin(2*np.pi*(F0 + i * dF) * np.arange(0, 1, 1 / sample_rate)).astype(np.float32)
+        else:
+            header += np.sin(2*np.pi*(F0 + i * dF) * np.arange(0, 1, 1 / sample_rate)).astype(np.float32)
+    corr = signal.correlate(header, header)
+    y = fft(header)
+    y = abs(y)
+    y = y[0:4000]
+    plt.plot(range(len(y)), y)
+    plt.show()
     return header
 
 
-start = time.time()
-transmit("INPUT.txt")
-end = time.time()
-print("Transmitting time: ", end-start)
+# start = time.time()
+# transmit("INPUT.txt")
+# end = time.time()
+# print("Transmitting time: ", end - start)
+header = gen_header()
+# sd.play(header, 48000)
+# sd.wait()
