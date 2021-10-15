@@ -16,9 +16,9 @@ def transmit(file_name):
     with open(file_name, 'r') as file:
         file_data = file.read()
     input_index = 0
-    symbols_in_frame = 100
+    symbols_in_frame = 125
     frame_num = int(len(file_data) / symbols_in_frame)
-    if frame_num * 100 < len(file_data):
+    if frame_num * 125 < len(file_data):
         frame_num += 1
     header = gen_header()
     data = []
