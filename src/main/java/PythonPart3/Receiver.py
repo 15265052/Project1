@@ -73,8 +73,8 @@ def decode_one_bit(s_buffer):
         return '1'
 
 
-file_name = "test100.wav"
-receive(file_name)
+file_name = "test125.wav"
+#receive(file_name)
 
 is_receiving = False
 header = gen_header()
@@ -87,9 +87,9 @@ header_count = 0
 carrier0 = np.sin(2 * np.pi * carrier_freq * np.arange(0, 0.001, 1 / sample_rate)).astype(np.float32)
 carrier1 = -(np.sin(2 * np.pi * carrier_freq * np.arange(0, 0.001, 1 / sample_rate))).astype(np.float32)
 
-frame_num = 100
+frame_num = 80
 detected_frame = 0
-symbol_per_frame = 100
+symbol_per_frame = 125
 samples_per_symbol = 48
 with sf.SoundFile(file_name) as sf_dest:
     data = sf_dest.read(dtype=np.float32)
@@ -97,7 +97,7 @@ corr1 = signal.correlate(data, header)
 plt.plot(range(len(corr1)), corr1)
 plt.show()
 max = np.max(signal.correlate(data, header))
-threshold = 0.1
+threshold = 1
 data_length = len(data)
 sync = []
 pointer = 0
@@ -121,6 +121,9 @@ while detected_frame < frame_num and pointer < data_length:
         decode(frame_buffer)
         pointer += header_length + symbol_per_frame * samples_per_symbol
         is_receiving = False
+if detected_frame < frame_num:
+    complement_str = '0'*symbol_per_frame
+    write_file(complement_str)
 
 print(header_count,detected_frame)
 # n = len(data) / 480
