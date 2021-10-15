@@ -43,23 +43,31 @@ def transmit(file_name):
 
 def gen_header():
     ''' header for 0.01 second'''
-    header_length = 480
-    sample_rate = 48000
-    F0 = 1875
-    dF = 46.875
-    header_index = [0, 3, 4, 7, 8, 11, 12, 15, 16, 19, 20, 23, 24, 27, 28, 31]
-    header = np.zeros(48000, dtype=np.float32)
-    for i in header_index:
-        if i % 2 == 0:
-            header += np.sin(2*np.pi*(F0 + i * dF) * np.arange(0, 1, 1 / sample_rate)).astype(np.float32)
-        else:
-            header += np.sin(2*np.pi*(F0 + i * dF) * np.arange(0, 1, 1 / sample_rate)).astype(np.float32)
+    # header_length = 480
+    # sample_rate = 48000
+    # F0 = 1875
+    # dF = 46.875
+    # header_index = [0, 3, 4, 7, 8, 11, 12, 15, 16, 19, 20, 23, 24, 27, 28, 31]
+    # header = np.zeros(48000, dtype=np.float32)
+    # for i in header_index:
+    #     if i % 2 == 0:
+    #         header += np.sin(2*np.pi*(F0 + i * dF) * np.arange(0, 1, 1 / sample_rate)).astype(np.float32)
+    #     else:
+    #         header += np.sin(2*np.pi*(F0 + i * dF) * np.arange(0, 1, 1 / sample_rate)).astype(np.float32)
+    # corr = signal.correlate(header, header)
+    # y = fft(header)
+    # y = abs(y)
+    # y = y[0:4000]
+    # plt.plot(range(len(y)), y)
+    # plt.show()
+    t = np.linspace(0,1, 48000,endpoint = True,dtype = np.float32)
+    t=t[0:480]
+    f_p = np.concatenate([np.linspace(2500, 8000, 240), np.linspace(8000,2500, 240)])
+    header = (np.sin(2*np.pi*integrate.cumtrapz(f_p, t))).astype(np.float32)
     corr = signal.correlate(header, header)
-    y = fft(header)
-    y = abs(y)
-    y = y[0:4000]
-    plt.plot(range(len(y)), y)
-    plt.show()
+    max = np.max(abs(corr))
+    avg = np.average(abs(corr))
+    print(max / avg)
     return header
 
 
@@ -67,6 +75,11 @@ def gen_header():
 # transmit("INPUT.txt")
 # end = time.time()
 # print("Transmitting time: ", end - start)
-header = gen_header()
+# header = gen_header()
 # sd.play(header, 48000)
 # sd.wait()
+carrier0 = np.sin(2 * np.pi * 2000 * np.arange(0, 0.001, 1 / 48000)).astype(np.float32)
+carrier1 = -np.sin(2 * np.pi * 2000 * np.arange(0, 0.001, 1 / 48000)).astype(np.float32)
+y = abs(fft(carrier0))
+plt.plot(range(len(y)), y)
+plt.show()
