@@ -1,19 +1,14 @@
-import struct
-
-import pyaudio
+import time
 import soundfile as sf
 import sounddevice as sd
-import wave
 import numpy as np
 from scipy import signal, integrate
-import matplotlib.pyplot as plt
-from scipy.fft import fft
 
 
 def receive(file_name):
     sample_rate = 48000
     channels = 1
-    record_seconds = 15
+    record_seconds = 13
     print("start recording")
     frame = sd.rec(int(sample_rate * record_seconds),
                    samplerate=sample_rate,
@@ -40,10 +35,7 @@ def detect_header(sync, pointer):
     argmax = np.argmax(abs(corr))
 
     if max > threshold:
-        print("detected a header, max:", max, "arg: ", pointer + argmax - header_length)
-        # plt.plot(range(len(corr)), corr)
-        # plt.show()
-        return argmax - header_length
+        return argmax - header_length + 1
     else:
         return 'error'
 
@@ -67,37 +59,36 @@ def write_file(str):
 
 def decode_one_bit(s_buffer):
     sum = np.sum(s_buffer * carrier0)
-    if sum > 0:
+    if sum >= 0:
         return '0'
     else:
         return '1'
 
 
-file_name = "test125.wav"
-#receive(file_name)
+file_name = "test100.wav"
+receive(file_name)
 
+start = time.time()
 is_receiving = False
 header = gen_header()
-header_length = 480
+header_length = 479
 carrier_freq = 2000
 sample_rate = 48000
 header_count = 0
+last_header = 0
 # skip the time when micro is heating
 
 carrier0 = np.sin(2 * np.pi * carrier_freq * np.arange(0, 0.001, 1 / sample_rate)).astype(np.float32)
-carrier1 = -(np.sin(2 * np.pi * carrier_freq * np.arange(0, 0.001, 1 / sample_rate))).astype(np.float32)
+carrier1 = -np.sin(2 * np.pi * carrier_freq * np.arange(0, 0.001, 1 / sample_rate)).astype(np.float32)
 
-frame_num = 80
+frame_num = 100
 detected_frame = 0
-symbol_per_frame = 125
+symbol_per_frame = 100
 samples_per_symbol = 48
 with sf.SoundFile(file_name) as sf_dest:
     data = sf_dest.read(dtype=np.float32)
-corr1 = signal.correlate(data, header)
-plt.plot(range(len(corr1)), corr1)
-plt.show()
-max = np.max(signal.correlate(data, header))
-threshold = 1
+
+threshold = 2
 data_length = len(data)
 sync = []
 pointer = 0
@@ -110,27 +101,28 @@ while detected_frame < frame_num and pointer < data_length:
             # detect a header
             header_count += 1
             is_receiving = True
-            pointer += pointer_header
+            pointer += pointer_header + 1
+            last_header = pointer
             continue
         else:
             pointer += 480
     else:
         # start decode bits
-        frame_buffer = data[pointer + header_length: pointer + header_length + symbol_per_frame * samples_per_symbol]
+        # re-locate
+        pointer += detect_header(data[pointer:pointer+header_length], pointer) + 1
+        frame_buffer = data[pointer+header_length: pointer + header_length+symbol_per_frame * samples_per_symbol]
         detected_frame += 1
         decode(frame_buffer)
         pointer += header_length + symbol_per_frame * samples_per_symbol
         is_receiving = False
-if detected_frame < frame_num:
-    complement_str = '0'*symbol_per_frame
-    write_file(complement_str)
 
-print(header_count,detected_frame)
-# n = len(data) / 480
-# for i in range(int(n)):
-#     # if i == 300:
-#     #     pass
-#     detect_header(data[i*480:(i+1)*480], i)
-#
-# plt.plot(range(len(corr)),corr)
-# plt.show()
+while detected_frame < frame_num:
+    frame_buffer = data[pointer + header_length: pointer + header_length + symbol_per_frame * samples_per_symbol]
+    detected_frame += 1
+    decode(frame_buffer)
+    pointer += header_length + symbol_per_frame * samples_per_symbol
+end = time.time()
+
+print("Receiving time: ", end-start)
+
+

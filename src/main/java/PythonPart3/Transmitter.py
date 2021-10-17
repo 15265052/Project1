@@ -1,14 +1,10 @@
-import matplotlib.pyplot as plt
 import numpy as np
-import pyaudio
 from scipy import signal, integrate
 import time
 import sounddevice as sd
-from scipy.fft import fft
 
 
 def transmit(file_name):
-    channels = 1
     sample_rate = 48000
     carrier_freq = 2000
     carrier0 = np.sin(2 * np.pi * carrier_freq * np.arange(0, 0.001, 1 / sample_rate)).astype(np.float32)
@@ -16,9 +12,9 @@ def transmit(file_name):
     with open(file_name, 'r') as file:
         file_data = file.read()
     input_index = 0
-    symbols_in_frame = 125
+    symbols_in_frame = 100
     frame_num = int(len(file_data) / symbols_in_frame)
-    if frame_num * 125 < len(file_data):
+    if frame_num * 100 < len(file_data):
         frame_num += 1
     header = gen_header()
     data = []
@@ -35,6 +31,7 @@ def transmit(file_name):
     sd.play(data, samplerate=sample_rate)
     sd.wait()
 
+
 def gen_header():
     ''' header for 0.01 second'''
     t = np.linspace(0, 1, 48000, endpoint=True, dtype=np.float32)
@@ -48,9 +45,3 @@ start = time.time()
 transmit("INPUT.txt")
 end = time.time()
 print("Transmitting time: ", end - start)
-# header = gen_header()
-# sd.play(header, 48000)
-# sd.wait()
-# sd.sleep(1000)
-# sd.play(header, 48000)
-# sd.wait()
